@@ -34,6 +34,8 @@ json = [ "serde", "serde_json" ]
 runtime-async-std = [ "sqlx-rt/runtime-async-std" ]
 runtime-tokio = [ "sqlx-rt/runtime-tokio" ]
 runtime-actix = [ "sqlx-rt/runtime-actix" ]
+runtime-actix-rustls = [ "sqlx-rt/runtime-actix-rustls" ]
+runtime-tokio-rustls = [ "sqlx-rt/runtime-tokio-rustls" ]
 
 # support offline/decoupled building (enables serialization of `Describe`)
 offline = [ "serde", "either/serde" ]

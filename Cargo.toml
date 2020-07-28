@@ -55,6 +55,8 @@ all-types = [ "bigdecimal", "decimal", "json", "time", "chrono", "ipnetwork", "u
 runtime-async-std = [ "sqlx-core/runtime-async-std", "sqlx-macros/runtime-async-std" ]
 runtime-actix = [ "sqlx-core/runtime-actix", "sqlx-macros/runtime-actix" ]
 runtime-tokio = [ "sqlx-core/runtime-tokio", "sqlx-macros/runtime-tokio" ]
+runtime-actix-rustls = [ "sqlx-core/runtime-actix-rustls", "sqlx-macros/runtime-actix-rustls" ]
+runtime-tokio-rustls = [ "sqlx-core/runtime-tokio-rustls", "sqlx-macros/runtime-tokio-rustls" ]
 
 # database
 any = [ "sqlx-core/any" ]

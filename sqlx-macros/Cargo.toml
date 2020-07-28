@@ -23,6 +23,8 @@ migrate = [ "sha2" ]
 runtime-async-std = [ "sqlx-core/runtime-async-std", "sqlx-rt/runtime-async-std" ]
 runtime-tokio = [ "sqlx-core/runtime-tokio", "sqlx-rt/runtime-tokio" ]
 runtime-actix = [ "sqlx-core/runtime-actix", "sqlx-rt/runtime-actix" ]
+runtime-actix-rustls = [ "sqlx-core/runtime-actix-rustls", "sqlx-rt/runtime-actix-rustls" ]
+runtime-tokio-rustls = [ "sqlx-core/runtime-tokio-rustls", "sqlx-rt/runtime-tokio-rustls" ]
 
 # offline building support
 offline = ["sqlx-core/offline", "serde", "serde_json", "hex", "sha2"]

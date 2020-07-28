@@ -2,18 +2,27 @@
     feature = "runtime-actix",
     feature = "runtime-async-std",
     feature = "runtime-tokio",
+    feature = "runtime-actix-rustls",
+    feature = "runtime-tokio-rustls",
 )))]
 compile_error!(
-    "one of 'runtime-actix', 'runtime-async-std' or 'runtime-tokio' features must be enabled"
+    "one of 'runtime-actix', 'runtime-async-std', 'runtime-tokio', 'runtime-actix-rustls' or 'runtime-tokio-rustls' features must be enabled"
 );
 
 #[cfg(any(
     all(feature = "runtime-actix", feature = "runtime-async-std"),
     all(feature = "runtime-actix", feature = "runtime-tokio"),
+    all(feature = "runtime-actix", feature = "runtime-actix-rustls"),
+    all(feature = "runtime-actix", feature = "runtime-tokio-rustls"),
     all(feature = "runtime-async-std", feature = "runtime-tokio"),
+    all(feature = "runtime-async-std", feature = "runtime-actix-rustls"),
+    all(feature = "runtime-async-std", feature = "runtime-tokio-rustls"),
+    all(feature = "runtime-tokio", feature = "runtime-actix-rustls"),
+    all(feature = "runtime-tokio", feature = "runtime-tokio-rustls"),
+    all(feature = "runtime-actix-rustls", feature = "runtime-tokio-rustls"),
 ))]
 compile_error!(
-    "only one of 'runtime-actix', 'runtime-async-std' or 'runtime-tokio' features can be enabled"
+    "only one of 'runtime-actix', 'runtime-async-std', 'runtime-tokio', 'runtime-actix-rustls' or 'runtime-tokio-rustls' features can be enabled"
 );
 
 pub use native_tls;
@@ -24,7 +33,12 @@ pub use native_tls;
 
 #[cfg(all(
     not(feature = "runtime-async-std"),
-    any(feature = "runtime-tokio", feature = "runtime-actix"),
+    any(
+        feature = "runtime-tokio",
+        feature = "runtime-actix",
+        feature = "runtime-actix-rustls",
+        feature = "runtime-tokio-rustls"
+    ),
 ))]
 pub use tokio::{
     self, fs, io::AsyncRead, io::AsyncReadExt, io::AsyncWrite, io::AsyncWriteExt, net::TcpStream,
@@ -34,7 +48,12 @@ pub use tokio::{
 #[cfg(all(
     unix,
     not(feature = "runtime-async-std"),
-    any(feature = "runtime-tokio", feature = "runtime-actix"),
+    any(
+        feature = "runtime-tokio",
+        feature = "runtime-actix",
+        feature = "runtime-actix-rustls",
+        feature = "runtime-tokio-rustls"
+    ),
 ))]
 pub use tokio::net::UnixStream;
 
@@ -43,8 +62,12 @@ pub use tokio::net::UnixStream;
 //
 
 #[cfg(all(
-    feature = "runtime-tokio",
-    not(any(feature = "runtime-actix", feature = "runtime-async-std",))
+    any(feature = "runtime-tokio", feature = "runtime-tokio-rustls"),
+    not(any(
+        feature = "runtime-actix",
+        feature = "runtime-actix-rustls",
+        feature = "runtime-async-std",
+    ))
 ))]
 #[macro_export]
 macro_rules! blocking {
@@ -59,16 +82,26 @@ pub use tokio_native_tls::{TlsConnector, TlsStream};
 #[cfg(all(feature = "tokio-native-tls", not(feature = "async-native-tls")))]
 pub use native_tls::Error as TlsError;
 
+#[cfg(all(feature = "tokio-rustls", not(feature = "async-native-tls")))]
+pub use tokio_rustls::{TlsConnector, TlsStream};
+
+#[cfg(all(feature = "tokio-rustls", not(feature = "async-native-tls")))]
+pub use rustls::TLSError as TlsError;
+
 //
 // actix
 //
 
-#[cfg(feature = "runtime-actix")]
+#[cfg(any(feature = "runtime-actix", feature = "runtime-actix-rustls"))]
 pub use {actix_rt, actix_threadpool};
 
 #[cfg(all(
-    feature = "runtime-actix",
-    not(any(feature = "runtime-tokio", feature = "runtime-async-std",))
+    any(feature = "runtime-actix", feature = "runtime-actix-rustls"),
+    not(any(
+        feature = "runtime-tokio",
+        feature = "runtime-async-std",
+        feature = "runtime-tokio-rustls",
+    ))
 ))]
 #[macro_export]
 macro_rules! blocking {
@@ -86,7 +119,12 @@ macro_rules! blocking {
 
 #[cfg(all(
     feature = "runtime-async-std",
-    not(any(feature = "runtime-actix", feature = "runtime-tokio",))
+    not(any(
+        feature = "runtime-actix",
+        feature = "runtime-tokio",
+        feature = "runtime-actix-rustls",
+        feature = "runtime-tokio-rustls",
+    ))
 ))]
 pub use async_std::{
     self, fs, future::timeout, io::prelude::ReadExt as AsyncReadExt,
@@ -96,7 +134,12 @@ pub use async_std::{
 
 #[cfg(all(
     feature = "runtime-async-std",
-    not(any(feature = "runtime-actix", feature = "runtime-tokio",))
+    not(any(
+        feature = "runtime-actix",
+        feature = "runtime-tokio",
+        feature = "runtime-actix-rustls",
+        feature = "runtime-tokio-rustls",
+    ))
 ))]
 #[macro_export]
 macro_rules! blocking {
@@ -108,7 +151,12 @@ macro_rules! blocking {
 #[cfg(all(
     unix,
     feature = "runtime-async-std",
-    not(any(feature = "runtime-actix", feature = "runtime-tokio",))
+    not(any(
+        feature = "runtime-actix",
+        feature = "runtime-tokio",
+        feature = "runtime-actix-rustls",
+        feature = "runtime-tokio-rustls",
+    ))
 ))]
 pub use async_std::os::unix::net::UnixStream;
 
@@ -117,13 +165,23 @@ pub use async_native_tls::{Error as TlsError, TlsConnector, TlsStream};
 
 #[cfg(all(
     feature = "runtime-async-std",
-    not(any(feature = "runtime-actix", feature = "runtime-tokio"))
+    not(any(
+        feature = "runtime-actix",
+        feature = "runtime-tokio",
+        feature = "runtime-actix-rustls",
+        feature = "runtime-tokio-rustls",
+    ))
 ))]
 pub use async_std::task::block_on;
 
 #[cfg(all(
     feature = "runtime-async-std",
-    not(any(feature = "runtime-actix", feature = "runtime-tokio"))
+    not(any(
+        feature = "runtime-actix",
+        feature = "runtime-tokio",
+        feature = "runtime-actix-rustls",
+        feature = "runtime-tokio-rustls",
+    ))
 ))]
 pub fn enter_runtime<F, R>(f: F) -> R
 where
@@ -134,12 +192,23 @@ where
 }
 
 #[cfg(all(
-    any(feature = "runtime-tokio", feature = "runtime-actix"),
+    any(
+        feature = "runtime-tokio",
+        feature = "runtime-actix",
+        feature = "runtime-actix-rustls",
+        feature = "runtime-tokio-rustls",
+        feature = ""
+    ),
     not(feature = "runtime-async-std")
 ))]
 pub use tokio_runtime::{block_on, enter_runtime};
 
-#[cfg(any(feature = "runtime-tokio", feature = "runtime-actix"))]
+#[cfg(any(
+    feature = "runtime-tokio",
+    feature = "runtime-actix",
+    feature = "runtime-actix-rustls",
+    feature = "runtime-tokio-rustls",
+))]
 mod tokio_runtime {
     use once_cell::sync::Lazy;
     use tokio::runtime::{self, Runtime};
@@ -155,7 +224,12 @@ mod tokio_runtime {
             .expect("failed to initialize Tokio runtime")
     });
 
-    #[cfg(any(feature = "runtime-tokio", feature = "runtime-actix"))]
+    #[cfg(any(
+        feature = "runtime-tokio",
+        feature = "runtime-actix",
+        feature = "runtime-actix-rustls",
+        feature = "runtime-tokio-rustls",
+    ))]
     pub fn block_on<F: std::future::Future>(future: F) -> F::Output {
         RUNTIME.enter(|| RUNTIME.handle().block_on(future))
     }
