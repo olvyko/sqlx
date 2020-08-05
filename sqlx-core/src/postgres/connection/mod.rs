@@ -24,6 +24,11 @@ mod establish;
 mod executor;
 mod sasl;
 mod stream;
+
+#[cfg(any(
+    feature = "tokio-tls",
+    feature = "async-std-tls",
+))]
 mod tls;
 
 /// A connection to a PostgreSQL database.

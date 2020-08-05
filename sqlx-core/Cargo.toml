@@ -30,6 +30,10 @@ bigdecimal = [ "bigdecimal_", "num-bigint" ]
 decimal = [ "rust_decimal", "num-bigint", "num-traits" ]
 json = [ "serde", "serde_json" ]
 
+# tls
+tokio-tls = [ "sqlx-rt/tokio-tls" ]
+async-std-tls = [ "sqlx-rt/async-std-tls" ]
+
 # runtimes
 runtime-async-std = [ "sqlx-rt/runtime-async-std" ]
 runtime-tokio = [ "sqlx-rt/runtime-tokio" ]

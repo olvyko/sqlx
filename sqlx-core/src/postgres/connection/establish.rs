@@ -3,11 +3,17 @@ use hashbrown::HashMap;
 use crate::common::StatementCache;
 use crate::error::Error;
 use crate::io::Decode;
-use crate::postgres::connection::{sasl, stream::PgStream, tls};
+use crate::postgres::connection::{sasl, stream::PgStream};
 use crate::postgres::message::{
     Authentication, BackendKeyData, MessageFormat, Password, ReadyForQuery, Startup,
 };
 use crate::postgres::{PgConnectOptions, PgConnection};
+
+#[cfg(any(
+    feature = "tokio-tls",
+    feature = "async-std-tls",
+))]
+use crate::postgres::connection::tls;
 
 // https://www.postgresql.org/docs/current/protocol-flow.html#id-1.10.5.7.3
 // https://www.postgresql.org/docs/current/protocol-flow.html#id-1.10.5.7.11
@@ -16,6 +22,10 @@ impl PgConnection {
     pub(crate) async fn establish(options: &PgConnectOptions) -> Result<Self, Error> {
         let mut stream = PgStream::connect(options).await?;
 
+        #[cfg(any(
+            feature = "tokio-tls",
+            feature = "async-std-tls",
+        ))]
         // Upgrade to TLS if we were asked to and the server supports it
         tls::maybe_upgrade(&mut stream, options).await?;
 

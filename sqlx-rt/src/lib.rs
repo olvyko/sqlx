@@ -16,6 +16,32 @@ compile_error!(
     "only one of 'runtime-actix', 'runtime-async-std' or 'runtime-tokio' features can be enabled"
 );
 
+#[cfg(any(
+    all(feature = "tokio-tls", feature = "async-std-tls"),
+))]
+compile_error!(
+    "only one of 'tokio-tls' or 'async-std-tls' features can be enabled"
+);
+
+#[cfg(any(
+    all(feature = "async-std-tls", feature = "runtime-tokio"),
+    all(feature = "async-std-tls", feature = "runtime-actix"),
+))]
+compile_error!(
+    "only 'runtime-async-std' feature can be enabled with 'async-std-tls' feature"
+);
+
+#[cfg(any(
+    all(feature = "tokio-tls", feature = "runtime-async-std"),
+))]
+compile_error!(
+    "only one of 'runtime-tokio' or 'runtime-actix' features can be enabled with 'tokio-tls' feature"
+);
+
+#[cfg(any(
+    feature = "tokio-tls",
+    feature = "async-std-tls",
+))]
 pub use native_tls;
 
 //
@@ -53,10 +79,10 @@ macro_rules! blocking {
     };
 }
 
-#[cfg(all(feature = "tokio-native-tls", not(feature = "async-native-tls")))]
+#[cfg(all(feature = "tokio-tls", feature = "tokio-native-tls", not(feature = "async-native-tls")))]
 pub use tokio_native_tls::{TlsConnector, TlsStream};
 
-#[cfg(all(feature = "tokio-native-tls", not(feature = "async-native-tls")))]
+#[cfg(all(feature = "tokio-tls", feature = "tokio-native-tls", not(feature = "async-native-tls")))]
 pub use native_tls::Error as TlsError;
 
 //
@@ -112,7 +138,7 @@ macro_rules! blocking {
 ))]
 pub use async_std::os::unix::net::UnixStream;
 
-#[cfg(all(feature = "async-native-tls", not(feature = "tokio-native-tls")))]
+#[cfg(all(feature = "async-std-tls", feature = "async-native-tls", not(feature = "tokio-native-tls")))]
 pub use async_native_tls::{Error as TlsError, TlsConnector, TlsStream};
 
 #[cfg(all(

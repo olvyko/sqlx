@@ -11,9 +11,12 @@ authors = [
 ]
 
 [features]
-runtime-actix = [ "actix-rt", "actix-threadpool", "tokio", "tokio-native-tls", "once_cell" ]
-runtime-async-std = [ "async-std", "async-native-tls" ]
-runtime-tokio = [ "tokio", "tokio-native-tls", "once_cell" ]
+tokio-tls = [ "native-tls", "tokio-native-tls" ]
+async-std-tls = [ "native-tls", "async-native-tls" ]
+
+runtime-actix = [ "actix-rt", "actix-threadpool", "tokio", "once_cell" ]
+runtime-async-std = [ "async-std" ]
+runtime-tokio = [ "tokio", "once_cell" ]
 
 [dependencies]
 async-native-tls = { version = "0.3.3", optional = true }
@@ -22,5 +25,5 @@ actix-threadpool = { version = "0.3.2", optional = true }
 async-std = { version = "1.6.0", features = [ "unstable" ], optional = true }
 tokio = { version = "0.2.21", optional = true, features = [ "blocking", "stream", "fs", "tcp", "uds", "macros", "rt-core", "rt-threaded", "time", "dns", "io-util" ] }
 tokio-native-tls = { version = "0.1.0", optional = true }
-native-tls = "0.2.4"
+native-tls = { version = "0.2.4", optional = true }
 once_cell = { version = "1.4", features = ["std"], optional = true }
