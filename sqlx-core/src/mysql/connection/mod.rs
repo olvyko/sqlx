@@ -14,6 +14,11 @@ mod auth;
 mod establish;
 mod executor;
 mod stream;
+
+#[cfg(any(
+    feature = "tokio-tls",
+    feature = "async-std-tls",
+))]
 mod tls;
 
 pub(crate) use stream::{Busy, MySqlStream};

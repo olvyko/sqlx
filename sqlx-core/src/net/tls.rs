@@ -5,7 +5,12 @@ use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use sqlx_rt::{AsyncRead, AsyncWrite, TlsConnector, TlsStream};
+use sqlx_rt::{AsyncRead, AsyncWrite};
+#[cfg(any(
+    feature = "tokio-tls",
+    feature = "async-std-tls",
+))]
+use sqlx_rt::{TlsConnector, TlsStream};
 
 use crate::error::Error;
 use std::mem::replace;
@@ -15,6 +20,10 @@ where
     S: AsyncRead + AsyncWrite + Unpin,
 {
     Raw(S),
+    #[cfg(any(
+        feature = "tokio-tls",
+        feature = "async-std-tls",
+    ))]
     Tls(TlsStream<S>),
     Upgrading,
 }
@@ -23,11 +32,28 @@ impl<S> MaybeTlsStream<S>
 where
     S: AsyncRead + AsyncWrite + Unpin,
 {
+    #[cfg(any(
+        feature = "tokio-tls",
+        feature = "async-std-tls",
+    ))]
     #[inline]
     pub fn is_tls(&self) -> bool {
         matches!(self, Self::Tls(_))
     }
 
+    #[cfg(not(any(
+        feature = "tokio-tls",
+        feature = "async-std-tls",
+    )))]
+    #[inline]
+    pub fn is_tls(&self) -> bool {
+        false
+    }
+
+    #[cfg(any(
+        feature = "tokio-tls",
+        feature = "async-std-tls",
+    ))]
     pub async fn upgrade(&mut self, host: &str, connector: TlsConnector) -> Result<(), Error> {
         let stream = match replace(self, MaybeTlsStream::Upgrading) {
             MaybeTlsStream::Raw(stream) => stream,
@@ -66,6 +92,10 @@ where
     ) -> Poll<io::Result<usize>> {
         match &mut *self {
             MaybeTlsStream::Raw(s) => Pin::new(s).poll_read(cx, buf),
+            #[cfg(any(
+                feature = "tokio-tls",
+                feature = "async-std-tls",
+            ))]
             MaybeTlsStream::Tls(s) => Pin::new(s).poll_read(cx, buf),
 
             MaybeTlsStream::Upgrading => Poll::Ready(Err(io::ErrorKind::ConnectionAborted.into())),
@@ -84,6 +114,10 @@ where
     {
         match &mut *self {
             MaybeTlsStream::Raw(s) => Pin::new(s).poll_read_buf(cx, buf),
+            #[cfg(any(
+                feature = "tokio-tls",
+                feature = "async-std-tls",
+            ))]
             MaybeTlsStream::Tls(s) => Pin::new(s).poll_read_buf(cx, buf),
 
             MaybeTlsStream::Upgrading => Poll::Ready(Err(io::ErrorKind::ConnectionAborted.into())),
@@ -102,6 +136,10 @@ where
     ) -> Poll<io::Result<usize>> {
         match &mut *self {
             MaybeTlsStream::Raw(s) => Pin::new(s).poll_write(cx, buf),
+            #[cfg(any(
+                feature = "tokio-tls",
+                feature = "async-std-tls",
+            ))]
             MaybeTlsStream::Tls(s) => Pin::new(s).poll_write(cx, buf),
 
             MaybeTlsStream::Upgrading => Poll::Ready(Err(io::ErrorKind::ConnectionAborted.into())),
@@ -111,6 +149,10 @@ where
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         match &mut *self {
             MaybeTlsStream::Raw(s) => Pin::new(s).poll_flush(cx),
+            #[cfg(any(
+                feature = "tokio-tls",
+                feature = "async-std-tls",
+            ))]
             MaybeTlsStream::Tls(s) => Pin::new(s).poll_flush(cx),
 
             MaybeTlsStream::Upgrading => Poll::Ready(Err(io::ErrorKind::ConnectionAborted.into())),
@@ -121,6 +163,9 @@ where
     fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         match &mut *self {
             MaybeTlsStream::Raw(s) => Pin::new(s).poll_shutdown(cx),
+            #[cfg(any(
+                feature = "tokio-tls",
+            ))]
             MaybeTlsStream::Tls(s) => Pin::new(s).poll_shutdown(cx),
 
             MaybeTlsStream::Upgrading => Poll::Ready(Err(io::ErrorKind::ConnectionAborted.into())),
@@ -149,6 +194,7 @@ where
     {
         match &mut *self {
             MaybeTlsStream::Raw(s) => Pin::new(s).poll_write_buf(cx, buf),
+            #[cfg(any(feature = "tokio-tls"))]
             MaybeTlsStream::Tls(s) => Pin::new(s).poll_write_buf(cx, buf),
 
             MaybeTlsStream::Upgrading => Poll::Ready(Err(io::ErrorKind::ConnectionAborted.into())),
@@ -166,10 +212,13 @@ where
         match self {
             MaybeTlsStream::Raw(s) => s,
 
-            #[cfg(not(feature = "runtime-async-std"))]
+            #[cfg(any(
+                all(feature = "runtime-tokio", feature = "tokio-tls"),
+                all(feature = "runtime-actix", feature = "tokio-tls"),
+            ))]
             MaybeTlsStream::Tls(s) => s.get_ref().get_ref().get_ref(),
 
-            #[cfg(feature = "runtime-async-std")]
+            #[cfg(all(feature = "runtime-async-std", feature = "async-std-tls"))]
             MaybeTlsStream::Tls(s) => s.get_ref(),
 
             MaybeTlsStream::Upgrading => panic!(io::Error::from(io::ErrorKind::ConnectionAborted)),
@@ -185,10 +234,13 @@ where
         match self {
             MaybeTlsStream::Raw(s) => s,
 
-            #[cfg(not(feature = "runtime-async-std"))]
+            #[cfg(any(
+                all(feature = "runtime-tokio", feature = "tokio-tls"),
+                all(feature = "runtime-actix", feature = "tokio-tls"),
+            ))]
             MaybeTlsStream::Tls(s) => s.get_mut().get_mut().get_mut(),
 
-            #[cfg(feature = "runtime-async-std")]
+            #[cfg(all(feature = "runtime-async-std", feature = "async-std-tls"))]
             MaybeTlsStream::Tls(s) => s.get_mut(),
 
             MaybeTlsStream::Upgrading => panic!(io::Error::from(io::ErrorKind::ConnectionAborted)),

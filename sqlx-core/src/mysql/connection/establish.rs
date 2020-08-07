@@ -2,7 +2,12 @@ use bytes::Bytes;
 
 use crate::common::StatementCache;
 use crate::error::Error;
-use crate::mysql::connection::{tls, MySqlStream, MAX_PACKET_SIZE};
+use crate::mysql::connection::{MySqlStream, MAX_PACKET_SIZE};
+#[cfg(any(
+    feature = "tokio-tls",
+    feature = "async-std-tls",
+))]
+use crate::mysql::connection::tls;
 use crate::mysql::protocol::connect::{
     AuthSwitchRequest, AuthSwitchResponse, Handshake, HandshakeResponse,
 };
@@ -59,6 +64,10 @@ impl MySqlConnection {
             stream.capabilities.remove(Capabilities::SSL);
         }
 
+        #[cfg(any(
+            feature = "tokio-tls",
+            feature = "async-std-tls",
+        ))]
         // Upgrade to TLS if we were asked to and the server supports it
         tls::maybe_upgrade(&mut stream, options).await?;
 
